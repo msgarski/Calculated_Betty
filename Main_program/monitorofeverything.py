@@ -36,7 +36,7 @@ class Monitorofeverything():
     rec_folder = "nagrania"
     path = os.path.join(directory, rec_folder)
     base_filename = "_t_word"
-    filename = "temp"
+    filename = "temp.wav"
 
     def __init__(self):
         self.block = 1024                                        # size of buffer(in number of samples)
@@ -47,7 +47,7 @@ class Monitorofeverything():
         self.gap_size = 0.06                                  # longitude of inside word break
         self.noise_multiplier = 1.5                             # for adjusting counted noise level
         self.shortest_word = 0.15                                # how long takes the shortest word?
-        #self.compute = []
+        self.compute = []
 
     def recording(self):
         try:
@@ -87,7 +87,7 @@ class Monitorofeverything():
 
     def stop_recording(self):
         try:
-            self.finish_flag = True
+            #self.finish_flag = True
             self.t_rec.join()
             self.t_signal_process.join()
             #self.t_saving.join()
@@ -276,21 +276,23 @@ class Monitorofeverything():
                     sum += '-'
             else:
                 sum += str(el)
+        self.compute.clear()
         suma = eval(sum)
         print(suma)
+        self.compute.append(suma)
         return suma
 
     def padding_audio(self, ys, sek):
         length = len(ys)
-        print("dlugosc przed: ", length)
+        #print("dlugosc przed: ", length)
         desired_legth = sek * self.frame_rate
         difference = desired_legth - length
         if difference > 0:
-            print("roznica: ", difference)
+            #print("roznica: ", difference)
             ys = np.pad(ys, (0, difference), 'constant')
         else:
             ys = ys[:desired_legth]
-        print("dlugosc po: ", len(ys))
+        #print("dlugosc po: ", len(ys))
         return ys
 
     def evaluate(self):
@@ -306,7 +308,7 @@ class Monitorofeverything():
             'minus', 'nn', 'odjac', 'plus', 'podzielic',  # 40 - 44
             'brak', 'przez', 'razy', 'stop', 'wynik']  # 45 - 49
 
-        compute = []
+        #compute = []
         wynik = 0
         while True:
             # pobranie słowa z kolejki
@@ -316,9 +318,7 @@ class Monitorofeverything():
             # tuning
             word = self.padding_audio(word, 2)
             # zapis i odczyt
-            filename = self.filename + '.wav'
-            #full_file_path = os.path.join(self.path, filename)
-            write(filename, self.frame_rate, word)
+            write(self.filename, self.frame_rate, word)
             data = self.extract_features()
 
             # uzyskanie max_clas jako indeksu tablicy labelsów
@@ -326,13 +326,18 @@ class Monitorofeverything():
             z = data.reshape(1, data.shape[0], data.shape[1], 1)
             prediction = model.predict(z)
             # clas = model.predict_classes(x)
-            x = int(np.argmax(prediction))
-            if (lb[x] == 'nn') or (lb[x] == 'stoop'):
-                continue
+            x = np.argmax(prediction)
 
-            if (len(compute) == 0):  # list is empty on start
+            print("nazwa klasy: ")
+            print(x)
+            print("wypowiedziane słowo:")
+            print(lb[x])
+
+            if (lb[x] == 'nn') or (lb[x] == 'stop'):
+                continue
+            elif (len(self.compute) == 0):  # list is empty on start
                 if (lb[x] == 'minus') or (lb[x] == 'odjac') or ((x <= 37) and (x >= 0)):
-                    compute.append(lb[x])
+                    self.compute.append(lb[x])
                     continue
                 else:
                     if (lb[x] == 'wynik'):
@@ -342,33 +347,33 @@ class Monitorofeverything():
                         break  # todo poza pętlą ustawić flagę i zakończyc wątki
             else:  # list is not empty
                 if ((x <= 37) and (x >= 0)):  # x is a number
-                    if (isinstance(compute[-1], str)):  # in the list is sign, not a number
-                        compute.append(lb[x])
+                    if (isinstance(self.compute[-1], str)):  # in the list is sign, not a number
+                        self.compute.append(lb[x])
                         continue
                     else:  # last element of the list is a number
-                        compute[-1] += lb[x]  # so we can add ane number to another
+                        self.compute[-1] += lb[x]  # so we can add ane number to another
                         continue  # and go to new iteration
                 else:  # x is not a number, is a sign or terminate
-                    if (isinstance(compute[-1], str)):  # in the list is sign, not a number
+                    if (isinstance(self.compute[-1], str)):  # in the list is sign, not a number
                         if (lb[x] == 'wynik'):
-                            compute.pop()  # delete sign at the end of the list
-                            wynik = self.last_score(compute)  # todo obsłużyć wynik
+                            self.compute.pop()  # delete sign at the end of the list
+                            wynik = self.last_score()  # todo obsłużyć wynik
                             continue
                         elif (lb[x] == 'koniec'):
-                            compute.pop()  # delete sign at the end of the list
-                            wynik = self.last_score(compute)  # todo obsłużyć wynik
+                            self.compute.pop()  # delete sign at the end of the list
+                            wynik = self.last_score()  # todo obsłużyć wynik
                             break  # todo poza pętlą ustawić flagę i zakończyc wątki
                         else:
                             continue
                     else:  # number at the end of the list
                         if (lb[x] == 'wynik'):
-                            wynik = self.last_score(compute)  # todo obsłużyć wynik
+                            wynik = self.last_score()  # todo obsłużyć wynik
                             continue
                         elif (lb[x] == 'koniec'):
-                            wynik = self.last_score(compute)  # todo obsłużyć wynik
+                            wynik = self.last_score()  # todo obsłużyć wynik
                             break  # todo poza pętlą ustawić flagę i zakończyc wątki
                         else:
-                            compute.append(lb[x])
+                            self.compute.append(lb[x])
                             continue
             print("Wynik: ", wynik)
         self.finish_flag = True
@@ -382,6 +387,7 @@ s = Monitorofeverything()
 s.rec_folder = "nagrania"
 s.recording()
 #time.sleep(20)
+
 s.stop_recording()
 exit()
 
