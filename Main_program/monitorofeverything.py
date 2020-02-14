@@ -297,17 +297,16 @@ class Monitorofeverything():
 
     def evaluate(self):
         lb = [  # indexes:
-            0, 1, 10, 3, 1000,  # 0 .. 4
-            11, 12, 13, 14, 15,  # 5 .. 9
-            16, 17, 18, 19, 2,  # 10 .. 14
-            20, 200, 3, 30, 300,  # 15 - 19
-            4, 40, 400, 5, 50,  # 20 - 24
-            500, 6, 60, 600, 7,  # 25 - 29
-            70, 700, 8, 80, 800,  # 30 - 34
-            9, 90, 900, 'dodac', 'koniec',  # 35 - 39
-            'minus', 'nn', 'odjac', 'plus', 'podzielic',  # 40 - 44
-            'brak', 'przez', 'razy', 'stop', 'wynik']  # 45 - 49
-
+            0, 1, 10, 3, 1000,                          # 0 .. 4
+            11, 12, 13, 14, 15,                         # 5 .. 9
+            16, 17, 18, 19, 2,                          # 10 .. 14
+            20, 200, 3, 30, 300,                        # 15 - 19
+            4, 40, 400, 5, 50,                          # 20 - 24
+            500, 6, 60, 600, 7,                         # 25 - 29
+            70, 700, 8, 80, 800,                        # 30 - 34
+            9, 90, 900, 'dodac', 'koniec',                  # 35 - 39
+            'minus', 'nn', 'odjac', 'plus', 'podzielic',    # 40 - 44
+            'brak', 'przez', 'razy', 'stop', 'wynik']       # 45 - 49
         #compute = []
         wynik = 0
         while True:
@@ -345,27 +344,29 @@ class Monitorofeverything():
                         continue
                     elif (lb[x] == 'koniec'):
                         break  # todo poza pętlą ustawić flagę i zakończyc wątki
-            else:  # list is not empty
-                if ((x <= 37) and (x >= 0)):  # x is a number
-                    if (isinstance(self.compute[-1], str)):  # in the list is sign, not a number
+                    else:
+                        continue
+            else:                                               # list is not empty
+                if ((x <= 37) and (x >= 0)):                    # x is a number
+                    if (isinstance(self.compute[-1], str)):     # in the list is sign, not a number
                         self.compute.append(lb[x])
                         continue
-                    else:  # last element of the list is a number
-                        self.compute[-1] += lb[x]  # so we can add ane number to another
-                        continue  # and go to new iteration
-                else:  # x is not a number, is a sign or terminate
-                    if (isinstance(self.compute[-1], str)):  # in the list is sign, not a number
+                    else:                                       # last element of the list is a number
+                        self.compute[-1] += lb[x]               # so we can add ane number to another
+                        continue                                # and go to new iteration
+                else:                                           # x is not a number, is a sign or terminate
+                    if (isinstance(self.compute[-1], str)):     # in the list is sign, not a number
                         if (lb[x] == 'wynik'):
-                            self.compute.pop()  # delete sign at the end of the list
+                            self.compute.pop()                  # delete sign at the end of the list
                             wynik = self.last_score()  # todo obsłużyć wynik
                             continue
                         elif (lb[x] == 'koniec'):
-                            self.compute.pop()  # delete sign at the end of the list
+                            self.compute.pop()                  # delete sign at the end of the list
                             wynik = self.last_score()  # todo obsłużyć wynik
                             break  # todo poza pętlą ustawić flagę i zakończyc wątki
                         else:
                             continue
-                    else:  # number at the end of the list
+                    else:                                       # number at the end of the list
                         if (lb[x] == 'wynik'):
                             wynik = self.last_score()  # todo obsłużyć wynik
                             continue
