@@ -270,7 +270,7 @@ class Monitorofeverything():
             if (isinstance(el, str)):
                 if (el == 'plus') or (el == 'dodac'):
                     sum += '+'
-                elif (el == 'ray'):
+                elif (el == 'razy'):
                     sum += '*'
                 elif (el == 'podzielic') or (el == 'przez'):
                     sum += '/'
@@ -324,10 +324,7 @@ class Monitorofeverything():
             # clas = model.predict_classes(x)
             x = np.argmax(prediction)
 
-            print("nazwa klasy: ")                              # these 4 lines are for deleting
-            print(x)
-            print("wypowiedziane słowo:")
-            print(lb[int(x)])
+            print("wypowiedziane słowo:", lb[int(x)])
 
             print("Wynik: ", self.wynik)
 
@@ -382,7 +379,6 @@ class Monitorofeverything():
 
         self.finish_flag = True                                 # tutaj zrobię ustawienie flagi
 
-        #return wynik
 
 
 
@@ -390,10 +386,8 @@ class Monitorofeverything():
 s = Monitorofeverything()
 s.rec_folder = "nagrania"
 s.recording()
-#time.sleep(20)
-
 s.stop_recording()
-exit()
+
 
 
 
