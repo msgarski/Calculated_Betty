@@ -47,6 +47,7 @@ class Monitorofeverything():
         self.gap_size = 0.06                                  # longitude of inside word break
         self.noise_multiplier = 1.5                             # for adjusting counted noise level
         self.shortest_word = 0.15                                # how long takes the shortest word?
+        self.longest_word = 1.0                                # how long takes the shortest word?
         self.compute = []
         self.wynik = 0
         self.say = 0
@@ -60,6 +61,8 @@ class Monitorofeverything():
         except:
             print("Błąd przy pyaudio i kolejkach... f-cja recording...")
 
+        self.min_word = self.time_to_frames(self.shortest_word)
+        self.max_word = self.time_to_frames(self.shortest_word)
         print("Noise Recording........")
         try:
             self.noise_level = self.noise_multiplier * self.noise_levels()
@@ -130,7 +133,7 @@ class Monitorofeverything():
 
     def get_rms(self,chunk):
         """
-        Function  for counting rms level from byte-like data chunk
+        Function  for counting rms level from byte-like data chunk;
         RMS amplitude is defined as the square root of
         the mean over time of the square of the amplitude,
         so we need to convert this string of bytes into a string of 16-bit samples...
@@ -172,7 +175,7 @@ class Monitorofeverything():
     def word_creating(self):
         """
         This function gets recorded chunks of audio and
-        recognize where voice starts
+        recognize where voice starts,
         recognize where voice stops
         and records these word to out_queue for additional process...
         """
@@ -205,7 +208,7 @@ class Monitorofeverything():
                         j += self.block
                         if (j > gap):
                             j = 0
-                            if len(word) > self.time_to_frames(self.shortest_word):
+                            if (len(word) > self.min_word): #and (len(word) < self.max_word):
                                 self.out_data_queue.put(word)           # Puting entire word into out_queue
                                 start_point = False
                             else:                                       # word is too short to be a real word
@@ -307,10 +310,13 @@ class Monitorofeverything():
             9, 90, 900, 'dodac', 'koniec',                  # 35 - 39
             'minus', 'nn', 'odjac', 'plus', 'podzielic',    # 40 - 44
             'brak', 'przez', 'razy', 'stop', 'wynik']       # 45 - 49
+        model = tf.keras.models.load_model("weights_best_cnn.hdf5")
         while True:
             word = self.out_data_queue.get()                            # pobranie słowa z kolejki
             if word is None:
                 break
+            elif len(word) > 44100:
+                word = word[:44100]
             # tuning
             word = self.padding_audio(word, 2)
             # zapis i odczyt
@@ -318,15 +324,13 @@ class Monitorofeverything():
             data = self.extract_features()
 
                                                                         # uzyskanie max_clas jako indeksu tablicy labelsów
-            model = tf.keras.models.load_model("weights_best_cnn.hdf5")
             z = data.reshape(1, data.shape[0], data.shape[1], 1)
             prediction = model.predict(z)
-            # clas = model.predict_classes(x)
             x = np.argmax(prediction)
 
             print("wypowiedziane słowo:", lb[int(x)])
 
-            print("Wynik: ", self.wynik)
+            #print("Wynik: ", self.wynik)
 
             if (lb[x] == 'nn') or (lb[x] == 'stop'):
                 continue
@@ -349,7 +353,7 @@ class Monitorofeverything():
                         self.wynik = self.last_score()          # obsłużyć wynik
                         continue
                     else:                                       # last element of the list is a number
-                        temp_sc = self.compute[-1] + lb[x]               # so we can add ane number to another
+                        temp_sc = int(self.compute[-1]) + int(lb[x])               # so we can add ane number to another
                         self.compute.clear()                    # to można zrobić w funkcji last_score
                         self.compute.append(temp_sc)
                         continue                                # and go to new iteration
